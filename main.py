@@ -45,6 +45,8 @@ if not images_data:
     exit()
 
 sample_image_data = images_data[0]
+rows = len(sample_image_data)
+columns = len(sample_image_data[0])
 
 # hard-code ranges as all images have the same size
 image_feature_required = [[[False for _ in range(3)] for _ in range(120)] for _ in range(120)]
@@ -53,16 +55,16 @@ image_feature_required = [[[False for _ in range(3)] for _ in range(120)] for _ 
 
 num_features_required = 0
 for image in images_data:
-    for i in range(120):
-        for j in range(120):
+    for i in range(rows):
+        for j in range(columns):
             for k in range(3):
                 image_feature_required[i][j][k] = (not image_feature_required[i][j][k]) and (image[i][j][k] != sample_image_data[i][j][k])
                 
 image_features = []
 for image in images_data:
     curr_image_feature = []
-    for i in range(120):
-        for j in range(120):
+    for i in range(rows):
+        for j in range(columns):
             for k in range(3):
                 if image_feature_required[i][j][k]:
                     curr_image_feature.append(image[i][j][k])
