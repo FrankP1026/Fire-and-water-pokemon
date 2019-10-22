@@ -1,5 +1,7 @@
 from PIL import Image
-from numpy import asarray
+import numpy as np
+
+import os
 
 # TODOs
 # 1. Load all images and build feature vectors without the 'A' component in 'RGBA'
@@ -16,6 +18,59 @@ from numpy import asarray
 # https://towardsdatascience.com/the-learning-process-logistic-regression-for-facial-recognition-take-2-6a1fef4ebe21
 # https://scikit-learn.org/stable/modules/cross_validation.html
 
-# Good read for extracting feature vectors from images, but probably not helpful for this proj:
+# Good read for extracting feature vectors from images, but probably not helpful for this project:
 # https://www.analyticsvidhya.com/blog/2019/08/3-techniques-extract-features-from-image-data-machine-learning-python/
+
+images_categories = []
+images_data = []
+images_names = []
+
+direc = "./trainingSet/fire/"
+for filename in os.listdir(direc):
+    images_names.append(filename)
+    image = Image.open(direc + filename)
+    image = image.convert('RGB')
+    images_categories.append(0)
+    images_data.append(np.asarray(image))
+
+direc = "./trainingSet/water/"
+for filename in os.listdir(direc):
+    images_names.append(filename)
+    image = Image.open(direc + filename)
+    image = image.convert('RGB')
+    images_categories.append(1)
+    images_data.append(np.asarray(image))
+
+if not images_data:
+    exit()
+
+sample_image_data = images_data[0]
+
+# hard-code ranges as all images have the same size
+image_feature_required = [[[False for _ in range(3)] for _ in range(120)] for _ in range(120)]
+
+#print(np.array(image_feature_required).shape)
+
+num_features_required = 0
+for image in images_data:
+    for i in range(120):
+        for j in range(120):
+            for k in range(3):
+                image_feature_required[i][j][k] = (not image_feature_required[i][j][k]) and (image[i][j][k] != sample_image_data[i][j][k])
+                
+image_features = []
+for image in images_data:
+    curr_image_feature = []
+    for i in range(120):
+        for j in range(120):
+            for k in range(3):
+                if image_feature_required[i][j][k]:
+                    curr_image_feature.append(image[i][j][k])
+    image_features.append(curr_image_feature)
+
+image_features = np.asarray(image_features)
+
+# now we get all the features, so we can start applying different techniques
+
+
 
