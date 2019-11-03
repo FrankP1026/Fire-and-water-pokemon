@@ -31,7 +31,9 @@ for filename in os.listdir(direc):
     image = Image.open(direc + filename)
     image = image.convert('RGB')
     images_categories.append(0)
-    images_data.append(np.asarray(image))
+
+    img_array = np.array(image)
+    images_data.append(img_array)
 
 direc = "./trainingSet/water/"
 for filename in os.listdir(direc):
@@ -39,7 +41,9 @@ for filename in os.listdir(direc):
     image = Image.open(direc + filename)
     image = image.convert('RGB')
     images_categories.append(1)
-    images_data.append(np.asarray(image))
+
+    img_array = np.array(image)
+    images_data.append(img_array)
 
 if not images_data:
     exit()
@@ -58,8 +62,10 @@ for image in images_data:
     for i in range(rows):
         for j in range(columns):
             for k in range(3):
-                image_feature_required[i][j][k] = (not image_feature_required[i][j][k]) and (image[i][j][k] != sample_image_data[i][j][k])
-                
+                image_feature_required[i][j][k] = image_feature_required[i][j][k] or (image[i][j][k] != sample_image_data[i][j][k])
+
+#print(np.sum(np.array(image_feature_required)))
+
 image_features = []
 for image in images_data:
     curr_image_feature = []
