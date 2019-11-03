@@ -4,6 +4,7 @@ from imblearn.over_sampling import RandomOverSampler
 from imblearn.over_sampling import SMOTE
 
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
 
 import numpy as np
@@ -86,9 +87,11 @@ image_features = np.asarray(image_features)
 
 # now we have all the features, so we can start applying different techniques
 
-# train_test_split
+# TODO: Recursive Feature Elimination
+
+'''
+# train_test_split()
 X_train, X_test, y_train, y_test = train_test_split(image_features, images_categories, test_size=0.2, random_state=0)
-print(y_test)
 
 # Over-sampling (as Fire is under-sampled compare to Water)
 # Random Over-sampliing
@@ -99,11 +102,28 @@ print(y_test)
 #os = SMOTE(random_state=0)
 #X_train, y_train = os.fit_resample(X_train, y_train)
 
-# fitting the model
-logreg = LogisticRegression()
+# evaluate the model using training and testing set
+logreg = LogisticRegression(solver='lbfgs')
 logreg.fit(X_train, y_train)
-
-# evaluate the model
-# TODO: any other ways of measuring accuracy?
 y_pred = logreg.predict(X_test)
-print('Accuracy of logistic regression classifier on test set: {:.2f}'.format(logreg.score(X_test, y_test)))
+print('Accuracy of logistic regression classifier on test set extracted by \
+train_test_split(): {:.2f}'.format(logreg.score(X_test, y_test)))
+'''
+
+
+# Cross Validation
+
+os = SMOTE(random_state=0)
+X_train, y_train = os.fit_resample(image_features, images_categories)
+#print(len(y_train))
+#print(np.sum(y_train))
+#ros = RandomOverSampler(random_state=0)
+#X_train, y_train = ros.fit_resample(image_features, images_categories)
+#X_train = image_features
+#y_train = images_categories
+
+logreg2 = LogisticRegression(solver='lbfgs')
+logreg2.fit(X_train, y_train)
+scores = cross_val_score(logreg2, image_features, images_categories, cv=5)
+print(scores)
+print("Accuracy of cross_validation: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
