@@ -1,6 +1,12 @@
 from PIL import Image
-import numpy as np
 
+from imblearn.over_sampling import RandomOverSampler
+from imblearn.over_sampling import SMOTE
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+
+import numpy as np
 import os
 
 # TODOs
@@ -53,7 +59,7 @@ rows = len(sample_image_data)
 columns = len(sample_image_data[0])
 
 # hard-code ranges as all images have the same size
-image_feature_required = [[[False for _ in range(3)] for _ in range(120)] for _ in range(120)]
+image_feature_required = [[[False for _ in range(3)] for _ in range(columns)] for _ in range(rows)]
 
 #print(np.array(image_feature_required).shape)
 
@@ -78,7 +84,26 @@ for image in images_data:
 
 image_features = np.asarray(image_features)
 
-# now we get all the features, so we can start applying different techniques
+# now we have all the features, so we can start applying different techniques
 
+# train_test_split
+X_train, X_test, y_train, y_test = train_test_split(image_features, images_categories, test_size=0.2, random_state=0)
+print(y_test)
 
+# Over-sampling (as Fire is under-sampled compare to Water)
+# Random Over-sampliing
+#ros = RandomOverSampler(random_state=0)
+#X_train, y_train = ros.fit_resample(X_train, y_train)
 
+# SMOTE
+#os = SMOTE(random_state=0)
+#X_train, y_train = os.fit_resample(X_train, y_train)
+
+# fitting the model
+logreg = LogisticRegression()
+logreg.fit(X_train, y_train)
+
+# evaluate the model
+# TODO: any other ways of measuring accuracy?
+y_pred = logreg.predict(X_test)
+print('Accuracy of logistic regression classifier on test set: {:.2f}'.format(logreg.score(X_test, y_test)))
