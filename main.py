@@ -10,14 +10,6 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import os
 
-# TODOs
-# 1. Load all images and build feature vectors without the 'A' component in 'RGBA'
-#    Try eliminating all the empty pixels (maybe Recursive Feature Elimination
-#    will save our time).
-# 2. Try applying logistic regression
-# 3. Add cross-validation
-# 4. Add SMOTE?
-# 5. What are the ways to handle 'too many features but too few training samples'?
 
 # References:
 # https://towardsdatascience.com/building-a-logistic-regression-in-python-step-by-step-becd4d56c9c8
@@ -89,28 +81,38 @@ image_features = np.asarray(image_features)
 
 # TODO: Recursive Feature Elimination
 
-'''
+
 # train_test_split()
-X_train, X_test, y_train, y_test = train_test_split(image_features, images_categories, test_size=0.2, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(image_features, images_categories, test_size=0.2)
+
+# Using original dataset for training does not help with eventual performance
+#X_train = image_features
+#y_train = images_categories
 
 # Over-sampling (as Fire is under-sampled compare to Water)
 # Random Over-sampliing
-#ros = RandomOverSampler(random_state=0)
-#X_train, y_train = ros.fit_resample(X_train, y_train)
+ros = RandomOverSampler()
+X_train, y_train = ros.fit_resample(X_train, y_train)
 
 # SMOTE
-#os = SMOTE(random_state=0)
-#X_train, y_train = os.fit_resample(X_train, y_train)
+#smote_os = SMOTE()
+#X_train, y_train = smote_os.fit_resample(X_train, y_train)
 
 # evaluate the model using training and testing set
-logreg = LogisticRegression(solver='liblinear')
+logreg = LogisticRegression(solver='lbfgs')
 logreg.fit(X_train, y_train)
 y_pred = logreg.predict(X_test)
-print('Accuracy of logistic regression classifier on test set extracted by \
+print('Accuracy of logistic regression classifier with L2 penalty on test set extracted by \
 train_test_split(): {:.2f}'.format(logreg.score(X_test, y_test)))
+
+logreg_2 = LogisticRegression(solver='liblinear', penalty='l1')
+logreg_2.fit(X_train, y_train)
+y_pred = logreg_2.predict(X_test)
+print('Accuracy of logistic regression classifier with L1 penalty on test set extracted by \
+train_test_split(): {:.2f}'.format(logreg_2.score(X_test, y_test)))
+
+
 '''
-
-
 # Cross Validation
 
 # TODO: over-sampling should not be done here, it should be done on the training data for each iteration of cross validation.
@@ -138,3 +140,53 @@ logreg_ridge = LogisticRegression(solver='lbfgs', penalty="l2")
 scores = cross_val_score(logreg_ridge, image_features, images_categories, cv=5)
 print(scores)
 print("Accuracy of cross_validation with Ridge regularization: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+'''
+
+# hard-coded testing code
+images_categories = []
+images_data = []
+images_names = []
+image_features = []
+
+direc = "./test_set_water_and_fire/Fire/"
+for filename in os.listdir(direc):
+    images_names.append(filename)
+    image = Image.open(direc + filename)
+    image = image.convert('RGB')
+    images_categories.append(0)
+
+    img_array = np.array(image)
+    images_data.append(img_array)
+
+direc = "./test_set_water_and_fire/Water/"
+for filename in os.listdir(direc):
+    images_names.append(filename)
+    image = Image.open(direc + filename)
+    image = image.convert('RGB')
+    images_categories.append(1)
+
+    img_array = np.array(image)
+    images_data.append(img_array)
+
+if not images_data:
+    exit()
+
+image_features = []
+for image in images_data:
+    curr_image_feature = []
+    for i in range(rows):
+        for j in range(columns):
+            for k in range(3):
+                if image_feature_required[i][j][k]:
+                    curr_image_feature.append(image[i][j][k])
+    image_features.append(curr_image_feature)
+
+image_features = np.asarray(image_features)
+
+y_pred = logreg.predict(image_features)
+print('Accuracy of logistic regression classifier with L2 penalty on actual test set \
+: {:.2f}'.format(logreg.score(image_features, images_categories)))
+
+y_pred = logreg_2.predict(image_features)
+print('Accuracy of logistic regression classifier with L1 penalty on actual test set \
+: {:.2f}'.format(logreg_2.score(image_features, images_categories)))
