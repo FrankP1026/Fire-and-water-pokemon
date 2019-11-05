@@ -103,7 +103,7 @@ X_train, X_test, y_train, y_test = train_test_split(image_features, images_categ
 #X_train, y_train = os.fit_resample(X_train, y_train)
 
 # evaluate the model using training and testing set
-logreg = LogisticRegression(solver='lbfgs')
+logreg = LogisticRegression(solver='liblinear')
 logreg.fit(X_train, y_train)
 y_pred = logreg.predict(X_test)
 print('Accuracy of logistic regression classifier on test set extracted by \
@@ -113,11 +113,8 @@ train_test_split(): {:.2f}'.format(logreg.score(X_test, y_test)))
 
 # Cross Validation
 
-# It seems neither the over-sampling nor cross-validation help improve performance of the model
-# Maybe it is just the limit of 'too many features and two few training samples'
-
-os = SMOTE(random_state=0)
-X_train, y_train = os.fit_resample(image_features, images_categories)
+#os = SMOTE(random_state=0)
+#X_train, y_train = os.fit_resample(image_features, images_categories)
 #print(len(y_train))
 #print(np.sum(y_train))
 #ros = RandomOverSampler(random_state=0)
@@ -125,9 +122,15 @@ X_train, y_train = os.fit_resample(image_features, images_categories)
 #X_train = image_features
 #y_train = images_categories
 
-logreg2 = LogisticRegression(solver='lbfgs')
-#logreg2 = LogisticRegressionCV(solver='lbfgs', cv=5)
-logreg2.fit(X_train, y_train)
-scores = cross_val_score(logreg2, image_features, images_categories, cv=5)
+# Cross Validation is NOT used for fitting the model, it is for testing the performance of proposed models,
+# fit() has to be called at the end (with all training data) to finalize the model
+# See https://stats.stackexchange.com/questions/52274/how-to-choose-a-predictive-model-after-k-fold-cross-validation
+logreg_lasso = LogisticRegression(solver='liblinear', penalty="l1")
+scores = cross_val_score(logreg_lasso, image_features, images_categories, cv=5)
 print(scores)
-print("Accuracy of cross_validation: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+print("Accuracy of cross_validation with Lasso regularization: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+
+logreg_ridge = LogisticRegression(solver='lbfgs', penalty="l2")
+scores = cross_val_score(logreg_ridge, image_features, images_categories, cv=5)
+print(scores)
+print("Accuracy of cross_validation with Ridge regularization: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
