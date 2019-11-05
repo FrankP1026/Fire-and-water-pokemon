@@ -113,6 +113,10 @@ train_test_split(): {:.2f}'.format(logreg.score(X_test, y_test)))
 
 # Cross Validation
 
+# TODO: over-sampling should not be done here, it should be done on the training data for each iteration of cross validation.
+# See https://datascience.stackexchange.com/questions/45046/cross-validation-for-highly-imbalanced-data-with-undersampling
+# and https://www.researchgate.net/post/should_oversampling_be_done_before_or_within_cross-validation
+
 #os = SMOTE(random_state=0)
 #X_train, y_train = os.fit_resample(image_features, images_categories)
 #print(len(y_train))
