@@ -10,14 +10,14 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import os
 
-# TODOs
+# steps
 # 1. Load all images and build feature vectors without the 'A' component in 'RGBA'
 #    Try eliminating all the empty pixels (maybe Recursive Feature Elimination
 #    will save our time).
-# 2. Try applying logistic regression
-# 3. Add cross-validation
-# 4. Add SMOTE?
-# 5. What are the ways to handle 'too many features but too few training samples'?
+# 2. Try Principal Component Analysis (PCA) / Recursive Feature Elimination
+# 3. Try Oversampling
+# 4. Try applying an algorithm (Logistic Regression, SVM, Neural Network, etc.)
+# 5. Do cross-validation
 
 # References:
 # https://towardsdatascience.com/building-a-logistic-regression-in-python-step-by-step-becd4d56c9c8
@@ -28,29 +28,22 @@ import os
 # Good read for extracting feature vectors from images, but probably not helpful for this project:
 # https://www.analyticsvidhya.com/blog/2019/08/3-techniques-extract-features-from-image-data-machine-learning-python/
 
+def add_images(img_directory, img_names, img_data, category):
+    for filename in os.listdir(img_directory):
+        image = Image.open(img_directory + filename)
+        image = image.convert('RGB')
+        images_categories.append(category)
+
+        img_array = np.array(image)
+        img_names.append(filename)
+        img_data.append(img_array)
+
 images_categories = []
 images_data = []
 images_names = []
 
-direc = "./trainingSet/fire/"
-for filename in os.listdir(direc):
-    images_names.append(filename)
-    image = Image.open(direc + filename)
-    image = image.convert('RGB')
-    images_categories.append(0)
-
-    img_array = np.array(image)
-    images_data.append(img_array)
-
-direc = "./trainingSet/water/"
-for filename in os.listdir(direc):
-    images_names.append(filename)
-    image = Image.open(direc + filename)
-    image = image.convert('RGB')
-    images_categories.append(1)
-
-    img_array = np.array(image)
-    images_data.append(img_array)
+add_images("./trainingSet/fire/", images_names, images_data, 0)
+add_images("./trainingSet/water/", images_names, images_data, 1)
 
 if not images_data:
     exit()
@@ -73,6 +66,7 @@ for image in images_data:
 
 #print(np.sum(np.array(image_feature_required)))
 
+# flatten the features
 image_features = []
 for image in images_data:
     curr_image_feature = []
@@ -86,8 +80,6 @@ for image in images_data:
 image_features = np.asarray(image_features)
 
 # now we have all the features, so we can start applying different techniques
-
-# TODO: Recursive Feature Elimination
 
 '''
 # train_test_split()
