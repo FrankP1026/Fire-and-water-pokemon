@@ -10,7 +10,48 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import os
 
-# steps
+def add_images(img_directory, img_names, img_data, img_categories, category):
+    for filename in os.listdir(img_directory):
+        image = Image.open(img_directory + filename)
+        image = image.convert('RGB')
+        img_categories.append(category)
+
+        img_array = np.array(image)
+        img_names.append(filename)
+        img_data.append(img_array)
+
+def get_required_features(img_data):
+    sample_image_data = img_data[0]
+    rows = len(sample_image_data)
+    columns = len(sample_image_data[0])
+
+    # hard-code ranges as all images have the same size
+    image_feature_required = [[[False for _ in range(3)] for _ in range(columns)] for _ in range(rows)]
+
+    #print(np.array(image_feature_required).shape)
+
+    for image in img_data:
+        for i in range(rows):
+            for j in range(columns):
+                for k in range(3):
+                    image_feature_required[i][j][k] = image_feature_required[i][j][k] or (image[i][j][k] != sample_image_data[i][j][k])
+    
+    return image_feature_required
+
+def get_flattened_features(img_data, img_feature_required):
+    image_features = []
+    for image in img_data:
+        curr_image_feature = []
+        for i in range(rows):
+            for j in range(columns):
+                for k in range(3):
+                    if img_feature_required[i][j][k]:
+                        curr_image_feature.append(image[i][j][k])
+        image_features.append(curr_image_feature)
+
+    return np.asarray(image_features)
+
+# Steps
 # 1. Load all images and build feature vectors without the 'A' component in 'RGBA'
 #    Try eliminating all the empty pixels (maybe Recursive Feature Elimination
 #    will save our time).
@@ -28,22 +69,12 @@ import os
 # Good read for extracting feature vectors from images, but probably not helpful for this project:
 # https://www.analyticsvidhya.com/blog/2019/08/3-techniques-extract-features-from-image-data-machine-learning-python/
 
-def add_images(img_directory, img_names, img_data, category):
-    for filename in os.listdir(img_directory):
-        image = Image.open(img_directory + filename)
-        image = image.convert('RGB')
-        images_categories.append(category)
-
-        img_array = np.array(image)
-        img_names.append(filename)
-        img_data.append(img_array)
-
 images_categories = []
 images_data = []
 images_names = []
 
-add_images("./trainingSet/fire/", images_names, images_data, 0)
-add_images("./trainingSet/water/", images_names, images_data, 1)
+add_images("./trainingSet/fire/", images_names, images_data, images_categories, 0)
+add_images("./trainingSet/water/", images_names, images_data, images_categories, 1)
 
 if not images_data:
     exit()
@@ -52,71 +83,17 @@ sample_image_data = images_data[0]
 rows = len(sample_image_data)
 columns = len(sample_image_data[0])
 
-# hard-code ranges as all images have the same size
-image_feature_required = [[[False for _ in range(3)] for _ in range(columns)] for _ in range(rows)]
-
-#print(np.array(image_feature_required).shape)
-
-num_features_required = 0
-for image in images_data:
-    for i in range(rows):
-        for j in range(columns):
-            for k in range(3):
-                image_feature_required[i][j][k] = image_feature_required[i][j][k] or (image[i][j][k] != sample_image_data[i][j][k])
-
+image_feature_required = get_required_features(images_data)
 #print(np.sum(np.array(image_feature_required)))
 
 # flatten the features
-image_features = []
-for image in images_data:
-    curr_image_feature = []
-    for i in range(rows):
-        for j in range(columns):
-            for k in range(3):
-                if image_feature_required[i][j][k]:
-                    curr_image_feature.append(image[i][j][k])
-    image_features.append(curr_image_feature)
-
-image_features = np.asarray(image_features)
-
-# now we have all the features, so we can start applying different techniques
-
-'''
-# train_test_split()
-X_train, X_test, y_train, y_test = train_test_split(image_features, images_categories, test_size=0.2, random_state=0)
-
-# Over-sampling (as Fire is under-sampled compare to Water)
-# Random Over-sampliing
-#ros = RandomOverSampler(random_state=0)
-#X_train, y_train = ros.fit_resample(X_train, y_train)
-
-# SMOTE
-#os = SMOTE(random_state=0)
-#X_train, y_train = os.fit_resample(X_train, y_train)
-
-# evaluate the model using training and testing set
-logreg = LogisticRegression(solver='liblinear')
-logreg.fit(X_train, y_train)
-y_pred = logreg.predict(X_test)
-print('Accuracy of logistic regression classifier on test set extracted by \
-train_test_split(): {:.2f}'.format(logreg.score(X_test, y_test)))
-'''
-
+image_features = get_flattened_features(images_data, image_feature_required)
 
 # Cross Validation
 
-# TODO: over-sampling should not be done here, it should be done on the training data for each iteration of cross validation.
+# TODO: do over-sampling on the training data for each iteration of cross validation.
 # See https://datascience.stackexchange.com/questions/45046/cross-validation-for-highly-imbalanced-data-with-undersampling
 # and https://www.researchgate.net/post/should_oversampling_be_done_before_or_within_cross-validation
-
-#os = SMOTE(random_state=0)
-#X_train, y_train = os.fit_resample(image_features, images_categories)
-#print(len(y_train))
-#print(np.sum(y_train))
-#ros = RandomOverSampler(random_state=0)
-#X_train, y_train = ros.fit_resample(image_features, images_categories)
-#X_train = image_features
-#y_train = images_categories
 
 # Cross Validation is NOT used for fitting the model, it is for testing the performance of proposed models,
 # fit() has to be called at the end (with all training data) to finalize the model
@@ -130,3 +107,50 @@ logreg_ridge = LogisticRegression(solver='lbfgs', penalty="l2")
 scores = cross_val_score(logreg_ridge, image_features, images_categories, cv=5)
 print(scores)
 print("Accuracy of cross_validation with Ridge regularization: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+
+# fitting the models
+X_train, X_test, y_train, y_test = train_test_split(image_features, images_categories, test_size=0.2)
+
+# Using original dataset for training does not help with eventual performance
+#X_train = image_features
+#y_train = images_categories
+
+# Over-sampling (as Fire is under-sampled compare to Water)
+# Random Over-sampliing
+#ros = RandomOverSampler()
+#X_train, y_train = ros.fit_resample(X_train, y_train)
+
+# SMOTE
+#smote_os = SMOTE()
+#X_train, y_train = smote_os.fit_resample(X_train, y_train)
+
+logreg_lasso.fit(X_train, y_train)
+y_pred = logreg_lasso.predict(X_test)
+print('Accuracy of logistic regression classifier with Lasso regularization on test set extracted by \
+train_test_split(): {:.2f}'.format(logreg_lasso.score(X_test, y_test)))
+
+logreg_ridge.fit(X_train, y_train)
+y_pred = logreg_ridge.predict(X_test)
+print('Accuracy of logistic regression classifier with Ridge regularization on test set extracted by \
+train_test_split(): {:.2f}'.format(logreg_ridge.score(X_test, y_test)))
+
+# testing code
+images_categories = []
+images_data = []
+images_names = []
+image_features = []
+
+add_images("./test_set_water_and_fire/Fire/", images_names, images_data, images_categories, 0)
+add_images("./test_set_water_and_fire/Water/", images_names, images_data, images_categories, 1)
+if not images_data:
+    exit()
+
+image_features = get_flattened_features(images_data, image_feature_required)
+
+y_pred = logreg_lasso.predict(image_features)
+print('Accuracy of logistic regression classifier with Lasso Regularization on actual test set \
+: {:.2f}'.format(logreg_lasso.score(image_features, images_categories)))
+
+y_pred = logreg_ridge.predict(image_features)
+print('Accuracy of logistic regression classifier with Ridge Regularization on actual test set \
+: {:.2f}'.format(logreg_ridge.score(image_features, images_categories)))
