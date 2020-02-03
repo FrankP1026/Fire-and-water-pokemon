@@ -65,6 +65,7 @@ def get_flattened_features(img_data, img_feature_required):
 # https://towardsdatascience.com/logistic-regression-for-facial-recognition-ab051acf6e4
 # https://towardsdatascience.com/the-learning-process-logistic-regression-for-facial-recognition-take-2-6a1fef4ebe21
 # https://scikit-learn.org/stable/modules/cross_validation.html
+# https://towardsdatascience.com/feature-selection-in-python-recursive-feature-elimination-19f1c39b8d15
 
 # Good read for extracting feature vectors from images, but probably not helpful for this project:
 # https://www.analyticsvidhya.com/blog/2019/08/3-techniques-extract-features-from-image-data-machine-learning-python/
@@ -98,6 +99,8 @@ image_features = get_flattened_features(images_data, image_feature_required)
 # Cross Validation is NOT used for fitting the model, it is for testing the performance of proposed models,
 # fit() has to be called at the end (with all training data) to finalize the model
 # See https://stats.stackexchange.com/questions/52274/how-to-choose-a-predictive-model-after-k-fold-cross-validation
+#
+# TODO: try more advanced cross-validation data-spliting methods, like StratifiedKFold
 logreg_lasso = LogisticRegression(solver='liblinear', penalty="l1")
 scores = cross_val_score(logreg_lasso, image_features, images_categories, cv=5)
 print(scores)
