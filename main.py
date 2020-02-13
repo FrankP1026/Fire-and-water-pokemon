@@ -7,6 +7,9 @@ from sklearn.linear_model import LogisticRegression, LogisticRegressionCV
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
 
+from sklearn.decomposition import PCA
+
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 
@@ -46,7 +49,7 @@ def get_flattened_features(img_data, img_feature_required):
             for j in range(columns):
                 for k in range(3):
                     if img_feature_required[i][j][k]:
-                        curr_image_feature.append(image[i][j][k])
+                        curr_image_feature.append(image[i][j][k] / 255)
         image_features.append(curr_image_feature)
 
     return np.asarray(image_features)
@@ -89,6 +92,27 @@ image_feature_required = get_required_features(images_data)
 
 # flatten the features
 image_features = get_flattened_features(images_data, image_feature_required)
+
+# PCA for Visulization
+pca = PCA(2)  # project to 2 dimensions
+projected = pca.fit_transform(image_features)
+print(len(image_features[0]))
+print(len(projected[0]))
+colours = ['r', 'b']
+for i in range(len(colours)):
+    x_values = [x for idx, x in enumerate(projected[:, 0]) if images_categories[idx] == i]
+    y_values = [y for idx, y in enumerate(projected[:, 1]) if images_categories[idx] == i]
+    plt.scatter(x_values, y_values, c=colours[i], edgecolor='none', alpha=0.5)
+plt.xlabel('component 1')
+plt.ylabel('component 2')
+plt.show()
+
+# PCA for explained variances and selecting number of principal components
+pca = PCA().fit(image_features)
+plt.plot(np.cumsum(pca.explained_variance_ratio_))
+plt.xlabel('number of components')
+plt.ylabel('cumulative explained variance')
+plt.show()
 
 # Cross Validation
 
