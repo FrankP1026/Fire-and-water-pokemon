@@ -11,6 +11,8 @@ from sklearn.decomposition import PCA
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+import argparse
 import os
 
 def add_images(img_directory, img_names, img_data, img_categories, category):
@@ -73,6 +75,13 @@ def get_flattened_features(img_data, img_feature_required):
 # Good read for extracting feature vectors from images, but probably not helpful for this project:
 # https://www.analyticsvidhya.com/blog/2019/08/3-techniques-extract-features-from-image-data-machine-learning-python/
 
+# Whether Principal Component Analysis is used for training or not
+parser = argparse.ArgumentParser()
+parser.add_argument('--use_pca', dest='use_pca', action='store_true')
+parser.set_defaults(use_pca=False)
+args = parser.parse_args()
+use_pca = args.use_pca
+
 images_categories = []
 images_data = []
 images_names = []
@@ -92,27 +101,6 @@ image_feature_required = get_required_features(images_data)
 
 # flatten the features
 image_features = get_flattened_features(images_data, image_feature_required)
-
-# PCA for Visulization
-pca = PCA(2)  # project to 2 dimensions
-projected = pca.fit_transform(image_features)
-print(len(image_features[0]))
-print(len(projected[0]))
-colours = ['r', 'b']
-for i in range(len(colours)):
-    x_values = [x for idx, x in enumerate(projected[:, 0]) if images_categories[idx] == i]
-    y_values = [y for idx, y in enumerate(projected[:, 1]) if images_categories[idx] == i]
-    plt.scatter(x_values, y_values, c=colours[i], edgecolor='none', alpha=0.5)
-plt.xlabel('component 1')
-plt.ylabel('component 2')
-plt.show()
-
-# PCA for explained variances and selecting number of principal components
-pca = PCA().fit(image_features)
-plt.plot(np.cumsum(pca.explained_variance_ratio_))
-plt.xlabel('number of components')
-plt.ylabel('cumulative explained variance')
-plt.show()
 
 # Cross Validation
 
@@ -151,6 +139,30 @@ X_train, X_test, y_train, y_test = train_test_split(image_features, images_categ
 #smote_os = SMOTE()
 #X_train, y_train = smote_os.fit_resample(X_train, y_train)
 
+pca = PCA(len(X_train))
+if use_pca:
+    # PCA for Visulization
+    pca = PCA(2)  # project to 2 dimensions
+    projected = pca.fit_transform(X_train)
+    colours = ['r', 'b']
+    for i in range(len(colours)):
+        x_values = [x for idx, x in enumerate(projected[:, 0]) if y_train[idx] == i]
+        y_values = [y for idx, y in enumerate(projected[:, 1]) if y_train[idx] == i]
+        plt.scatter(x_values, y_values, c=colours[i], edgecolor='none', alpha=0.5)
+    plt.xlabel('component 1')
+    plt.ylabel('component 2')
+    plt.show()
+
+    # PCA for explained variances and selecting number of principal components
+    pca = PCA().fit(X_train)
+    plt.plot(np.cumsum(pca.explained_variance_ratio_))
+    plt.xlabel('number of components')
+    plt.ylabel('cumulative explained variance')
+    plt.show()
+
+    X_train = pca.fit_transform(X_train)
+    X_test = pca.transform(X_test)
+
 logreg_lasso.fit(X_train, y_train)
 y_pred = logreg_lasso.predict(X_test)
 print('Accuracy of logistic regression classifier with Lasso regularization on test set extracted by \
@@ -173,6 +185,8 @@ if not images_data:
     exit()
 
 image_features = get_flattened_features(images_data, image_feature_required)
+if use_pca:
+    image_features = pca.transform(image_features)
 
 y_pred = logreg_lasso.predict(image_features)
 print('Accuracy of logistic regression classifier with Lasso Regularization on actual test set \
