@@ -103,6 +103,10 @@ if __name__ == '__main__':
     # flatten the features
     image_features = get_flattened_features(images_data, image_feature_required)
 
+    # Linear regression models with different solvers and regularization methods
+    logreg_ridge = LogisticRegression(solver='lbfgs', penalty="l2")
+    logreg_lasso = LogisticRegression(solver='liblinear', penalty="l1")
+
     # Cross Validation
 
     # TODO: do over-sampling on the training data for each iteration of cross validation.
@@ -114,15 +118,16 @@ if __name__ == '__main__':
     # See https://stats.stackexchange.com/questions/52274/how-to-choose-a-predictive-model-after-k-fold-cross-validation
     #
     # TODO: try more advanced cross-validation data-spliting methods, like StratifiedKFold
-    logreg_lasso = LogisticRegression(solver='liblinear', penalty="l1")
+
+    '''
     scores = cross_val_score(logreg_lasso, image_features, images_categories, cv=5)
     print(scores)
     print("Accuracy of cross_validation with Lasso regularization: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
-
-    logreg_ridge = LogisticRegression(solver='lbfgs', penalty="l2")
+    
     scores = cross_val_score(logreg_ridge, image_features, images_categories, cv=5)
     print(scores)
     print("Accuracy of cross_validation with Ridge regularization: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+    '''
 
     # fitting the models
     X_train, X_test, y_train, y_test = train_test_split(image_features, images_categories, test_size=0.2)
@@ -166,13 +171,15 @@ if __name__ == '__main__':
 
     logreg_lasso.fit(X_train, y_train)
     y_pred = logreg_lasso.predict(X_test)
-    print('Accuracy of logistic regression classifier with Lasso regularization on test set extracted by \
-    train_test_split(): {:.2f}'.format(logreg_lasso.score(X_test, y_test)))
+    print("""Accuracy of logistic regression classifier with Lasso regularization on test set extracted by 
+    train_test_split(): {:.2f}""".format(logreg_lasso.score(X_test, y_test)))
 
     logreg_ridge.fit(X_train, y_train)
     y_pred = logreg_ridge.predict(X_test)
-    print('Accuracy of logistic regression classifier with Ridge regularization on test set extracted by \
-    train_test_split(): {:.2f}'.format(logreg_ridge.score(X_test, y_test)))
+    print("""Accuracy of logistic regression classifier with Ridge regularization on test set extracted by 
+    train_test_split(): {:.2f}""".format(logreg_ridge.score(X_test, y_test)))
+
+    print()
 
     # testing code
     images_categories = []
@@ -190,9 +197,9 @@ if __name__ == '__main__':
         image_features = pca.transform(image_features)
 
     y_pred = logreg_lasso.predict(image_features)
-    print('Accuracy of logistic regression classifier with Lasso Regularization on actual test set \
-    : {:.2f}'.format(logreg_lasso.score(image_features, images_categories)))
+    print("""Accuracy of logistic regression classifier with Lasso Regularization on actual test set: {:.2f}""" 
+    .format(logreg_lasso.score(image_features, images_categories)))
 
     y_pred = logreg_ridge.predict(image_features)
-    print('Accuracy of logistic regression classifier with Ridge Regularization on actual test set \
-    : {:.2f}'.format(logreg_ridge.score(image_features, images_categories)))
+    print("""Accuracy of logistic regression classifier with Ridge Regularization on actual test set: {:.2f}"""
+    .format(logreg_ridge.score(image_features, images_categories)))
